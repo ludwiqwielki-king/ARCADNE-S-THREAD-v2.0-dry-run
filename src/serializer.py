@@ -1,18 +1,21 @@
 import json
-import toon  # hypothetical library or custom parser
 
 class Serializer:
+    """
+    Serializer for Ariadne's Thread v2.0
+    Uses native JSON only - no external dependencies.
+    """
     @staticmethod
-    def to_hot_format(data):
-        # Minified JSON for API input
-        return json.dumps(data, separators=(',', ':'))
-    
+    def to_hot_format(data: dict) -> str:
+        """Minified JSON for API input (saves tokens)."""
+        return json.dumps(data, separators=(',', ':'), ensure_ascii=False)
+
     @staticmethod
-    def to_cold_format(data):
-        # TOON for Archive storage (saving space)
-        return toon.dumps(data) # Or custom compact format
-    
+    def to_cold_format(data: dict) -> str:
+        """Pretty-printed JSON for archive storage."""
+        return json.dumps(data, indent=2, ensure_ascii=False)
+
     @staticmethod
-    def from_cold_format(raw_data):
-        # Convert back to JSON for model processing
-        return toon.loads(raw_data)
+    def from_json(raw_data: str) -> dict:
+        """Parse JSON string to dict."""
+        return json.loads(raw_data)

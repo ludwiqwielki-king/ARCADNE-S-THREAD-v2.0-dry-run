@@ -19,16 +19,14 @@ class ContextManager:
         max_tokens = self.get_max_input_tokens(model_name)
         total_tokens = 0
         active_slice = []
-        
+
         # Iterujemy od najnowszego wpisu
         for entry in reversed(thread):
             entry_str = json.dumps(entry, ensure_ascii=False)
             tokens = self._estimate_tokens(entry_str)
             if total_tokens + tokens > max_tokens:
                 break
-            active_slice.append(entry)  # O(1)
-            # ... po pętli:
-            return list(reversed(active_slice))
+            active_slice.append(entry)
             total_tokens += tokens
-            
-        return active_slice
+
+        return list(reversed(active_slice))

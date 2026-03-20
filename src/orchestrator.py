@@ -163,6 +163,10 @@ def main():
 
     print("🚀 HEINITZ-PRIME ORCHESTRATOR v2.0.5 START (KAGGLE)")
 
+    # Create directories for Kaggle runtime
+    for d in [DATA_DIR, LOGS_DIR, DATA_DIR/"checkpoints", DATA_DIR/"branches"]:
+        d.mkdir(parents=True, exist_ok=True)
+
     mode = input("Tryb (normal / low_power): ").strip().lower()
     if mode == "low_power":
         wanderer_mode = "low_power"
