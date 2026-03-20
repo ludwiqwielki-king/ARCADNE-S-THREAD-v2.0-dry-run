@@ -47,11 +47,11 @@ for d in [DATA_DIR, LOGS_DIR, DATA_DIR/"checkpoints", DATA_DIR/"branches"]:
 
 # Load core files
 try:
- with open(CONFIG_DIR / "core_directives.md", encoding="utf-8") as f:
- SYSTEM_PROMPT = f.read()
+    with open(CONFIG_DIR / "core_directives.md", encoding="utf-8") as f:
+        SYSTEM_PROMPT = f.read()
 except FileNotFoundError:
- print("❌ Brak pliku config/core_directives.md")
- exit(1)
+    print("❌ Brak pliku config/core_directives.md")
+    exit(1)
 with open(CONFIG_DIR / "models.yaml", encoding="utf-8") as f:
     MODELS = yaml.safe_load(f)
 with open(CONFIG_DIR / "fallback_prompt.md", encoding="utf-8") as f:
