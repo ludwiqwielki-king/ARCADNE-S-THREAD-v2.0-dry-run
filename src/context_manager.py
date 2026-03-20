@@ -26,7 +26,9 @@ class ContextManager:
             tokens = self._estimate_tokens(entry_str)
             if total_tokens + tokens > max_tokens:
                 break
-            active_slice.insert(0, entry)
+            active_slice.append(entry)  # O(1)
+            # ... po pętli:
+            return list(reversed(active_slice))
             total_tokens += tokens
             
         return active_slice

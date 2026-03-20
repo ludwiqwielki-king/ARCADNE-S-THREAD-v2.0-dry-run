@@ -46,8 +46,12 @@ for d in [DATA_DIR, LOGS_DIR, DATA_DIR/"checkpoints", DATA_DIR/"branches"]:
     d.mkdir(exist_ok=True)
 
 # Load core files
-with open(CONFIG_DIR / "core_directives.md", encoding="utf-8") as f:
-    SYSTEM_PROMPT = f.read()
+try:
+ with open(CONFIG_DIR / "core_directives.md", encoding="utf-8") as f:
+ SYSTEM_PROMPT = f.read()
+except FileNotFoundError:
+ print("❌ Brak pliku config/core_directives.md")
+ exit(1)
 with open(CONFIG_DIR / "models.yaml", encoding="utf-8") as f:
     MODELS = yaml.safe_load(f)
 with open(CONFIG_DIR / "fallback_prompt.md", encoding="utf-8") as f:
@@ -224,14 +228,9 @@ def main():
         # Fallback Parser
         try:
             parsed = json.loads(raw)
-        except:
-            print("❌ JSON error → Qwen-Fixer")
-        # Fallback Parser
-        try:
-            parsed = json.loads(raw)
         except Exception as e:
             print(f"❌ JSON error ({e}) → Stryż (Fallback Parser)")
-            parsed = qwen_fixer(raw, FALLBACK_PROMPT, get_secret)
+        parsed = qwen_fixer(raw, FALLBACK_PROMPT, get_secret)
 
         # Schema validation
         if not validate_entry(parsed):

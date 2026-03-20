@@ -1,3 +1,6 @@
+# ŹLE: # OpenAI text-embedding-3-small  ← to model 1536-dim!
+# DOBRZE: # Dummy vector for dry-run (384-dim, no semantics)
+
 import os
 from qdrant_client import QdrantClient
 
@@ -7,12 +10,12 @@ from llm_client import generate_response
 import requests
 
 def get_embedding(text: str, get_secret_func) -> list:
-    """Tworzy embedding za pomoca OpenAI (text-embedding-3-small)"""
-    api_key = get_secret_func("OPENAI_API_KEY")
-    if not api_key:
-        print("Brak OPENAI_API_KEY do wektoryzacji. RAG zignorowany.")
-        # Zwracamy dummy wektor żeby uniknąć crasha
-        return [0.0] * 1536
+    """
+    TEMPORARY: Dummy embedding for dry-run testing.
+    For production: use sentence-transformers with 'all-MiniLM-L6-v2'.
+    """
+    # Zamiast 1536 (OpenAI) -> 384 (zgodne z Qdrant config)
+    return [0.0] * 384  # ⚠️ Bez semantyki, tylko do testów struktury
         
     headers = {
         "Authorization": f"Bearer {api_key}",
@@ -22,7 +25,7 @@ def get_embedding(text: str, get_secret_func) -> list:
         "input": text,
         "model": "text-embedding-3-small"
     }
-    resp = requests.post("https://api.openai.com/v1/embeddings", headers=headers, json=payload)
+    resp = requests.post("https://api.openai.com/v1/embeddings", headers=headers, json=payload, timeout=30)
     resp.raise_for_status()
     return resp.json()["data"][0]["embedding"]
 
