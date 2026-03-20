@@ -1,0 +1,20 @@
+qwen_validator:
+  role: "Stryż (Validator/Naprawiacz JSON)"
+  context_window: 32000
+  provider: "huggingface"
+  model_id: "Qwen/Qwen2.5-32B-Instruct" # Zastąp "Qwen/Qwen3.5-35B-A3B" jeśli masz dedykowany endpoint
+  temperature: 0.2
+
+gemini_mutator:
+  role: "Mutator (Architekt Chaosu)"
+  context_window: 1048576
+  provider: "google"
+  model_id: "gemini-1.5-pro"
+  temperature: 0.9
+
+gemini_blank:
+  role: "Epistemolog (Czyste Konto, Sędzia)"
+  context_window: 1048576
+  provider: "google"
+  model_id: "gemini-1.5-flash"
+  temperature: 0.3

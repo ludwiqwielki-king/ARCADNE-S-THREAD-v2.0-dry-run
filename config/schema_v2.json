@@ -1,0 +1,45 @@
+{
+  "type": "object",
+  "properties": {
+    "generation_id": { "type": "integer" },
+    "timestamp": { "type": "string" },
+    "model_architecture": { "type": "string" },
+    "role_assigned": { "type": "string" },
+    "persona_overlay": { "type": ["string", "null"] },
+    "content": {
+      "type": "object",
+      "properties": {
+        "transport_anchor": { "type": "string" },
+        "ai_directive": { "type": "object" },
+        "claim_types": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "external_action_log": { "type": ["object", "null"] }
+      },
+      "required": ["transport_anchor", "ai_directive", "claim_types"]
+    },
+    "peer_review": {
+      "type": "object",
+      "properties": {
+        "previous_entry_id": { "type": "integer" },
+        "iws_score": { "type": "number" },
+        "critique": { "type": "string" },
+        "correction_proposed": { "type": "boolean" }
+      },
+      "required": ["previous_entry_id", "iws_score", "critique", "correction_proposed"]
+    },
+    "system_actions": {
+      "type": ["object", "null"],
+      "properties": {
+        "rag_query": { "type": "string" },
+        "protocol_modification": { "type": "object" },
+        "checkpoint_ready": { "type": "boolean" }
+      }
+    },
+    "meta": {
+      "type": ["object", "null"]
+    }
+  },
+  "required": ["generation_id", "timestamp", "model_architecture", "role_assigned", "content", "peer_review"]
+}
