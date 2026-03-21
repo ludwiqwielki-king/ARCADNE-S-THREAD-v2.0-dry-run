@@ -9,15 +9,26 @@ def qwen_fixer(raw_text: str, fallback_prompt: str, get_secret_func) -> dict:
     """
     print("🔧 Stryż (Fallback Parser) uruchamia się...")
 
-    import os
-    schema_text = ""
-    try:
-        with open('config/schema_v2.json', 'r', encoding='utf-8') as sf:
-            schema_text = sf.read()
-    except Exception:
-        pass
+    szablon = '''
+{
+  "generation_id": 999,
+  "timestamp": "2026-03-21T00:00:00Z",
+  "model_architecture": "Odczytaj z kontekstu",
+  "role_assigned": "Odczytaj z kontekstu",
+  "content": {
+    "transport_anchor": "Krótkie streszczenie do Wędrowca",
+    "ai_directive": {},
+    "claim_types": ["LOGICAL"]
+  },
+  "peer_review": {
+    "previous_entry_id": 0,
+    "iws_score": 5.0,
+    "critique": "Krytyka",
+    "correction_proposed": false
+  }
+}'''
 
-    prompt = f"Oto uszkodzony output modelu. Przekształć to ściśle do podanego SCHEMA JSON:\n{schema_text}\n\nZachowaj całą treść z oryginalnego outputu poniżej:\n\n{raw_text}"
+    prompt = f"Oto uszkodzony tekst wygenerowany przez model:\n\n{raw_text}\n\n=== TWOJE ZADANIE ===\nPrzekształć go na PRAWIDŁOWY JSON posiadający DOKŁADNIE PONIŻSZE KLUCZE:\n{szablon}\n\nZachowaj intencje z oryginalnego tekstu! Zwróć tylko JSON."
     
     try:
         fixed_raw = generate_response(

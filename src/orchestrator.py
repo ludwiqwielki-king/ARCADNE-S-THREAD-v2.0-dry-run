@@ -239,7 +239,7 @@ def main():
         # Schema validation
         if not validate_entry(parsed):
             print("❌ Schema validation error → Stryż (Fallback Parser)")
-            parsed = qwen_fixer(json.dumps(parsed), FALLBACK_PROMPT + "\nUpewnij się, że zachowujesz ścisłą strukturę JSON Schema.", get_secret)
+            parsed = qwen_fixer(raw, FALLBACK_PROMPT + "\nUpewnij się, że zachowujesz ścisłą strukturę JSON (generation_id, timestamp, model_architecture, role_assigned, content, peer_review).", get_secret)
 
         # Persist state
         parsed.setdefault("meta", {})["iterations_since_last_ext"] = iterations_since_last_ext
