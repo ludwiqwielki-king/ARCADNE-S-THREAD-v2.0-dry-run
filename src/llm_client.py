@@ -1,36 +1,33 @@
 """
 HEINITZ-PRIME: LLM Client Wrapper (Dry-Run Minimal)
-Providers: huggingface (Qwen), google (Gemini)
-Secrets (Kaggle UI): "Qwen", "Gemini API Key", "QDRANT_API_KEY", "QDRANT_URL"
+Providers: huggingface (via OpenAI SDK + router), google (Gemini REST)
+Secrets (Kaggle UI): "Qwen", "Gemini API Key", "QDRANT_URL", "QDRANT_API_KEY"
 """
+from openai import OpenAI  # ✅ Nowa dependencja
 import requests
-import os
 
 # ============================================================================
-# PROVIDER: HUGGINGFACE (Qwen via new router endpoint)
+# PROVIDER: HUGGINGFACE (via OpenAI SDK + router.huggingface.co)
 # ============================================================================
 def call_huggingface_model(prompt: str, system_prompt: str, model_id: str, temperature: float, api_key: str) -> str:
-    """Call HF Inference API v1 via router.huggingface.co — NO TRAILING SPACES"""
-    url = "https://router.huggingface.co/hf-inference/v1/chat/completions"  # ✅ No trailing space
-    headers = {
-        "Authorization": f"Bearer {api_key}",  # ✅ No trailing space after key or value
-        "Content-Type": "application/json"
-    }
-    payload = {
-        "model": model_id,  # ✅ model in payload, not URL
-        "temperature": temperature,
-        "max_tokens": 4000,
-        "messages": [
+    """Call HF models via OpenAI-compatible router endpoint"""
+    client = OpenAI(
+        base_url="https://router.huggingface.co/v1",  # ✅ Bez trailing spaces
+        api_key=api_key
+    )
+    completion = client.chat.completions.create(
+        model=model_id,  # ✅ Model w payload, nie w URL
+        messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": prompt}
-        ]
-    }
-    resp = requests.post(url, headers=headers, json=payload, timeout=30)
-    resp.raise_for_status()
-    return resp.json()["choices"][0]["message"]["content"]
+        ],
+        temperature=temperature,
+        max_tokens=4000
+    )
+    return completion.choices[0].message.content
 
 # ============================================================================
-# PROVIDER: GOOGLE (Gemini via REST API)
+# PROVIDER: GOOGLE (Gemini via REST API) — bez zmian, działa
 # ============================================================================
 def call_google_model(prompt: str, system_prompt: str, model_id: str, temperature: float, api_key: str) -> str:
     """Call Gemini via Google Generative Language REST API"""
@@ -51,7 +48,7 @@ def call_google_model(prompt: str, system_prompt: str, model_id: str, temperatur
     return resp.json()["candidates"][0]["content"]["parts"][0]["text"]
 
 # ============================================================================
-# MAIN WRAPPER: generate_response
+# MAIN WRAPPER: generate_response (DRY-RUN: HF + GEMINI ONLY)
 # ============================================================================
 def generate_response(prompt: str, system_prompt: str, provider: str, model_id: str, temperature: float, get_secret_func) -> str:
     """
@@ -60,22 +57,12 @@ def generate_response(prompt: str, system_prompt: str, provider: str, model_id: 
     """
     try:
         if provider == "huggingface":
-            api_key = get_secret_func("Qwen")  # ✅ Exact name from Kaggle Secrets UI
+            api_key = get_secret_func("Qwen")  # ✅ Exact Kaggle Secret name
             return call_huggingface_model(prompt, system_prompt, model_id, temperature, api_key)
         
         elif provider == "google":
-            api_key = get_secret_func("Gemini API Key")  # ✅ Exact name from Kaggle Secrets UI
+            api_key = get_secret_func("Gemini API Key")  # ✅ Exact Kaggle Secret name
             return call_google_model(prompt, system_prompt, model_id, temperature, api_key)
-        
-        # --------------------------------------------------------------------
-        # PHASE 2: Uncomment below when adding OpenAI/Anthropic support
-        # --------------------------------------------------------------------
-        # elif provider == "openai":
-        #     api_key = get_secret_func("OPENAI_API_KEY")
-        #     return call_openai_model(prompt, system_prompt, model_id, temperature, api_key)
-        # elif provider == "anthropic":
-        #     api_key = get_secret_func("ANTHROPIC_API_KEY")
-        #     return call_anthropic_model(prompt, system_prompt, model_id, temperature, api_key)
         
         else:
             raise ValueError(f"Unknown provider for dry-run: {provider}")
@@ -83,11 +70,3 @@ def generate_response(prompt: str, system_prompt: str, provider: str, model_id: 
     except Exception as e:
         print(f"Error calling {provider} API: {e}")
         raise
-
-# ============================================================================
-# PHASE 2: Stubs for future providers (commented out for dry-run minimalism)
-# ============================================================================
-# def call_openai_model(prompt: str, system_prompt: str, model_id: str, temperature: float, api_key: str) -> str:
-#     ...
-# def call_anthropic_model(prompt: str, system_prompt: str, model_id: str, temperature: float, api_key: str) -> str:
-#     ...
