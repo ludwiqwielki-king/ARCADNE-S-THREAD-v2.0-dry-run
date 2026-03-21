@@ -11,7 +11,7 @@ def call_openai_model(prompt: str, system_prompt: str, model_id: str, temperatur
             {"role": "user", "content": prompt}
         ]
     }
-    resp = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload, timeout=30)
+    resp = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload, timeout=120)
     resp.raise_for_status()
     return resp.json()["choices"][0]["message"]["content"]
 
@@ -30,7 +30,7 @@ def call_anthropic_model(prompt: str, system_prompt: str, model_id: str, tempera
             {"role": "user", "content": prompt}
         ]
     }
-    resp = requests.post("https://api.anthropic.com/v1/messages", headers=headers, json=payload, timeout=30)
+    resp = requests.post("https://api.anthropic.com/v1/messages", headers=headers, json=payload, timeout=120)
     resp.raise_for_status()
     return resp.json()["content"][0]["text"]
 
@@ -48,7 +48,7 @@ def call_google_model(prompt: str, system_prompt: str, model_id: str, temperatur
             "temperature": temperature
         }
     }
-    resp = requests.post(url, json=payload, timeout=30)
+    resp = requests.post(url, json=payload, timeout=120)
     resp.raise_for_status()
     return resp.json()["candidates"][0]["content"]["parts"][0]["text"]
 
@@ -64,7 +64,7 @@ def call_huggingface_model(prompt: str, system_prompt: str, model_id: str, tempe
         ]
     }
     url = "https://router.huggingface.co/v1/chat/completions"
-    resp = requests.post(url, headers=headers, json=payload, timeout=30)
+    resp = requests.post(url, headers=headers, json=payload, timeout=120)
     resp.raise_for_status()
     return resp.json()["choices"][0]["message"]["content"]
 
