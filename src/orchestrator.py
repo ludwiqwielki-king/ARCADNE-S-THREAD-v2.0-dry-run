@@ -233,12 +233,14 @@ def main():
         try:
             parsed = json.loads(raw)
         except Exception as e:
-            print(f"❌ JSON error ({e}) → Stryż (Fallback Parser)")
-        parsed = qwen_fixer(raw, FALLBACK_PROMPT, get_secret)
+            print(f"❌ JSON error ({e}) → Stryż (Fallback Parser) wkracza do akcji (pauza 15s API ratelimit)...")
+            import time; time.sleep(15)
+            parsed = qwen_fixer(raw, FALLBACK_PROMPT + "\nUpewnij się, że zachowujesz ścisłą strukturę JSON.", get_secret)
 
         # Schema validation
-        if not validate_entry(parsed):
-            print("❌ Schema validation error → Stryż (Fallback Parser)")
+        if not isinstance(parsed, dict) or not validate_entry(parsed):
+            print("❌ Schema validation error → Stryż (Fallback Parser) ratuje schemat (pauza 15s API ratelimit)...")
+            import time; time.sleep(15)
             parsed = qwen_fixer(raw, FALLBACK_PROMPT + "\nUpewnij się, że zachowujesz ścisłą strukturę JSON (generation_id, timestamp, model_architecture, role_assigned, content, peer_review).", get_secret)
 
         # Persist state
