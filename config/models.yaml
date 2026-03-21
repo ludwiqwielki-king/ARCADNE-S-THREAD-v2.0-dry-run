@@ -1,22 +1,22 @@
 gemini_validator:
   role: "Stryż (Validator/Naprawiacz JSON)"
-  context_window: 1048576
+  context_window: 131072
   provider: "google"
-  model_id: "gemini-1.5-flash"
+  model_id: "gemma-3-27b-it"
   temperature: 0.2
 
 gemini_mutator:
   role: "Mutator (Architekt Chaosu)"
-  context_window: 1048576
+  context_window: 131072
   provider: "google"
-  model_id: "gemini-1.5-flash"
+  model_id: "gemma-3-27b-it"
   temperature: 0.9
 
 gemini_blank:
   role: "Epistemolog (Czyste Konto, Sędzia)"
-  context_window: 1048576
+  context_window: 131072
   provider: "google"
-  model_id: "gemini-1.5-flash"
+  model_id: "gemma-3-27b-it"
   temperature: 0.3
 
 
