@@ -1,41 +1,39 @@
-import os
+"""
+HEINITZ-PRIME: LLM Client Wrapper (Dry-Run Minimal)
+Providers: huggingface (Qwen), google (Gemini)
+Secrets (Kaggle UI): "Qwen", "Gemini API Key", "QDRANT_API_KEY", "QDRANT_URL"
+"""
 import requests
+import os
 
-def call_openai_model(prompt: str, system_prompt: str, model_id: str, temperature: float, api_key: str) -> str:
-    headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
-    payload = {
-        "model": model_id,
-        "temperature": temperature,
-        "messages": [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": prompt}
-        ]
-    }
-    resp = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload, timeout=30)
-    resp.raise_for_status()
-    return resp.json()["choices"][0]["message"]["content"]
-
-def call_anthropic_model(prompt: str, system_prompt: str, model_id: str, temperature: float, api_key: str) -> str:
+# ============================================================================
+# PROVIDER: HUGGINGFACE (Qwen via new router endpoint)
+# ============================================================================
+def call_huggingface_model(prompt: str, system_prompt: str, model_id: str, temperature: float, api_key: str) -> str:
+    """Call HF Inference API v1 via router.huggingface.co"""
+    url = "https://router.huggingface.co/hf-inference/v1/chat/completions"
     headers = {
-        "x-api-key": api_key, 
-        "anthropic-version": "2023-06-01", 
+        "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json"
     }
     payload = {
         "model": model_id,
         "temperature": temperature,
         "max_tokens": 4000,
-        "system": system_prompt,
         "messages": [
+            {"role": "system", "content": system_prompt},
             {"role": "user", "content": prompt}
         ]
     }
-    resp = requests.post("https://api.anthropic.com/v1/messages", headers=headers, json=payload, timeout=30)
+    resp = requests.post(url, headers=headers, json=payload, timeout=30)
     resp.raise_for_status()
-    return resp.json()["content"][0]["text"]
+    return resp.json()["choices"][0]["message"]["content"]
 
+# ============================================================================
+# PROVIDER: GOOGLE (Gemini via REST API)
+# ============================================================================
 def call_google_model(prompt: str, system_prompt: str, model_id: str, temperature: float, api_key: str) -> str:
-    # Use Gemini REST API
+    """Call Gemini via Google Generative Language REST API"""
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_id}:generateContent?key={api_key}"
     payload = {
         "system_instruction": {
@@ -52,39 +50,44 @@ def call_google_model(prompt: str, system_prompt: str, model_id: str, temperatur
     resp.raise_for_status()
     return resp.json()["candidates"][0]["content"]["parts"][0]["text"]
 
-def call_huggingface_model(prompt: str, system_prompt: str, model_id: str, temperature: float, api_key: str) -> str:
-    headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
-    payload = {
-        "model": model_id,
-        "temperature": temperature,
-        "max_tokens": 4000,
-        "messages": [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": prompt}
-        ]
-    }
-    url = f"https://api-inference.huggingface.co/models/{model_id}/v1/chat/completions"
-    resp = requests.post(url, headers=headers, json=payload, timeout=30)
-    resp.raise_for_status()
-    return resp.json()["choices"][0]["message"]["content"]
-
+# ============================================================================
+# MAIN WRAPPER: generate_response
+# ============================================================================
 def generate_response(prompt: str, system_prompt: str, provider: str, model_id: str, temperature: float, get_secret_func) -> str:
-    """Wrapper to call appropriate API based on provider."""
+    """
+    Wrapper to call appropriate API based on provider.
+    Dry-run supports: 'huggingface', 'google'
+    """
     try:
-        if provider == "openai":
-            api_key = get_secret_func("QDRANT_API_KEY")
-            return call_openai_model(prompt, system_prompt, model_id, temperature, api_key)
-        elif provider == "anthropic":
-            api_key = get_secret_func("ANTHROPIC_API_KEY")
-            return call_anthropic_model(prompt, system_prompt, model_id, temperature, api_key)
-        elif provider == "google":
-            api_key = get_secret_func("Gemini API Key")
-            return call_google_model(prompt, system_prompt, model_id, temperature, api_key)
-        elif provider == "huggingface":
-            api_key = get_secret_func("Qwen")
+        if provider == "huggingface":
+            api_key = get_secret_func("Qwen")  # ✅ Exact name from Kaggle Secrets UI
             return call_huggingface_model(prompt, system_prompt, model_id, temperature, api_key)
+        
+        elif provider == "google":
+            api_key = get_secret_func("Gemini API Key")  # ✅ Exact name from Kaggle Secrets UI
+            return call_google_model(prompt, system_prompt, model_id, temperature, api_key)
+        
+        # --------------------------------------------------------------------
+        # PHASE 2: Uncomment below when adding OpenAI/Anthropic support
+        # --------------------------------------------------------------------
+        # elif provider == "openai":
+        #     api_key = get_secret_func("OPENAI_API_KEY")
+        #     return call_openai_model(prompt, system_prompt, model_id, temperature, api_key)
+        # elif provider == "anthropic":
+        #     api_key = get_secret_func("ANTHROPIC_API_KEY")
+        #     return call_anthropic_model(prompt, system_prompt, model_id, temperature, api_key)
+        
         else:
-            raise ValueError(f"Unknown provider: {provider}")
+            raise ValueError(f"Unknown provider for dry-run: {provider}")
+    
     except Exception as e:
         print(f"Error calling {provider} API: {e}")
         raise
+
+# ============================================================================
+# PHASE 2: Stubs for future providers (commented out for dry-run minimalism)
+# ============================================================================
+# def call_openai_model(prompt: str, system_prompt: str, model_id: str, temperature: float, api_key: str) -> str:
+#     ...
+# def call_anthropic_model(prompt: str, system_prompt: str, model_id: str, temperature: float, api_key: str) -> str:
+#     ...
