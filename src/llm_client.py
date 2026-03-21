@@ -1,21 +1,16 @@
 """
 HEINITZ-PRIME: LLM Client Wrapper (Dry-Run Minimal)
-Providers: 
-  - huggingface: via OpenAI SDK + router.huggingface.co/v1
-  - google: via google.genai SDK (not REST)
+Providers: huggingface (via OpenAI SDK), google (via google.genai SDK)
 Secrets (Kaggle UI): "Qwen", "Gemini API Key", "QDRANT_URL", "QDRANT_API_KEY"
 """
 from openai import OpenAI
-from google import genai  # ✅ Nowa dependencja
-# requests nie jest już potrzebny dla tych dwóch providerów
+from google import genai
 
-# ============================================================================
-# PROVIDER: HUGGINGFACE (via OpenAI SDK + router.huggingface.co)
-# ============================================================================
+
 def call_huggingface_model(prompt: str, system_prompt: str, model_id: str, temperature: float, api_key: str) -> str:
     """Call HF models via OpenAI-compatible router endpoint"""
     client = OpenAI(
-        base_url="https://router.huggingface.co/v1",  # ✅ Zero trailing spaces
+        base_url="https://router.huggingface.co/v1",
         api_key=api_key
     )
     completion = client.chat.completions.create(
@@ -29,30 +24,27 @@ def call_huggingface_model(prompt: str, system_prompt: str, model_id: str, tempe
     )
     return completion.choices[0].message.content
 
-# ============================================================================
-# PROVIDER: GOOGLE (Gemini via google.genai SDK)
-# ============================================================================
+
 def call_google_model(prompt: str, system_prompt: str, model_id: str, temperature: float, api_key: str) -> str:
-    """Call Gemini via google.genai SDK — compatibility mode (no GenerationConfig object)"""
-    from google import genai
-    
+    """Call Gemini via google.genai SDK — config dict mode"""
     client = genai.Client(api_key=api_key)
     
-    # ✅ Normalize model prefix
-    clean_model = model_id if model_id.startswith("models/") else f"models/{model_id}"
+    # Normalize model prefix (ensure exactly one "models/")
+    if model_id.startswith("models/models/"):
+        clean_model = model_model.replace("models/models/", "models/", 1)
+    elif model_id.startswith("models/"):
+        clean_model = model_id
+    else:
+        clean_model = f"models/{model_id}"
     
-    # ✅ Pass config params directly — avoids GenerationConfig compatibility issues
     response = client.models.generate_content(
         model=clean_model,
         contents=f"SYSTEM: {system_prompt}\n\nUSER: {prompt}",
-        temperature=temperature,
-        max_output_tokens=4000
+        config={"temperature": temperature, "max_output_tokens": 4000}
     )
     return response.text
 
-# ============================================================================
-# MAIN WRAPPER: generate_response (DRY-RUN: HF + GEMINI ONLY)
-# ============================================================================
+
 def generate_response(prompt: str, system_prompt: str, provider: str, model_id: str, temperature: float, get_secret_func) -> str:
     """
     Wrapper to call appropriate API based on provider.
