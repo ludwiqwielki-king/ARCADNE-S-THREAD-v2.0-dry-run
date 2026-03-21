@@ -1,8 +1,8 @@
-qwen_validator:
+gemini_validator:
   role: "Stryż (Validator/Naprawiacz JSON)"
-  context_window: 32000
-  provider: "huggingface"
-  model_id: "Qwen/Qwen3.5-35B-A3B" # Zastąp "Qwen/Qwen3.5-35B-A3B" jeśli masz dedykowany endpoint
+  context_window: 1048576
+  provider: "google"
+  model_id: "gemini-2.5-flash"
   temperature: 0.2
 
 gemini_mutator:
