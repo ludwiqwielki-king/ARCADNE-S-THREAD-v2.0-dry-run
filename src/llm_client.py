@@ -10,14 +10,14 @@ import os
 # PROVIDER: HUGGINGFACE (Qwen via new router endpoint)
 # ============================================================================
 def call_huggingface_model(prompt: str, system_prompt: str, model_id: str, temperature: float, api_key: str) -> str:
-    """Call HF Inference API v1 via router.huggingface.co"""
-    url = "https://router.huggingface.co/hf-inference/v1/chat/completions"
+    """Call HF Inference API v1 via router.huggingface.co — NO TRAILING SPACES"""
+    url = "https://router.huggingface.co/hf-inference/v1/chat/completions"  # ✅ No trailing space
     headers = {
-        "Authorization": f"Bearer {api_key}",
+        "Authorization": f"Bearer {api_key}",  # ✅ No trailing space after key or value
         "Content-Type": "application/json"
     }
     payload = {
-        "model": model_id,
+        "model": model_id,  # ✅ model in payload, not URL
         "temperature": temperature,
         "max_tokens": 4000,
         "messages": [
