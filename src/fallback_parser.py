@@ -1,109 +1,50 @@
-"""
-HEINITZ-PRIME: Fallback Parser (Stryż)
-Uses Gemini (not Qwen) for stability on Kaggle during dry-run.
-"""
-import re
 import json
-from src.llm_client import generate_response
-
-
-FALLBACK_PROMPT = """You are a JSON repair specialist. 
-The following text contains a broken or incomplete JSON response.
-Your task: Extract or reconstruct valid JSON that matches the expected schema.
-Return ONLY valid JSON. No markdown. No explanations.
-
-Broken input:"""
-
-
-def cleanup_markdown_json(text: str) -> str:
-    """Remove markdown code blocks and extract JSON"""
-    # Remove ```json ... ``` blocks
-    text = re.sub(r'```json\s*', '', text)
-    text = re.sub(r'```\s*', '', text)
-    # Remove leading/trailing whitespace
-    text = text.strip()
-    return text
-
-
-def extract_json_from_text(text: str) -> str:
-    """Extract first JSON object from text"""
-    # Try to find { ... } block
-    match = re.search(r'\{.*\}', text, re.DOTALL)
-    if match:
-        return match.group()
-    return text
-
+from datetime import datetime
+from llm_client import generate_response
 
 def qwen_fixer(raw_text: str, fallback_prompt: str, get_secret_func) -> dict:
     """
-    Attempt to fix broken JSON using LLM (Gemini for dry-run stability).
-    Returns parsed dict or raises exception.
+    Stryż / Fallback Parser – naprawia zepsuty JSON bez zmiany intencji
+    Dla szybkości używamy GPT-4o-mini (bardzo tani, zręczny w JSONach).
     """
-    # Step 1: Clean markdown
-    cleaned = cleanup_markdown_json(raw_text)
+    print("🔧 Stryż (Fallback Parser) uruchamia się...")
+
+    prompt = f"Oto uszkodzony output modelu. Odzyskaj to do struktury JSON, zachowując całą treść z oryginalnych intencji:\n\n{raw_text}"
     
-    # Step 2: Try direct parse first
     try:
-        return json.loads(cleaned)
-    except json.JSONDecodeError:
-        pass
-    
-    # Step 3: Extract JSON block
-    json_block = extract_json_from_text(cleaned)
-    try:
-        return json.loads(json_block)
-    except json.JSONDecodeError:
-        pass
-    
-    # Step 4: Call LLM to fix (Gemini, not Qwen — more stable on Kaggle)
-    try:
-        prompt = f"{fallback_prompt}\n\n{raw_text[:3000]}"  # Truncate for speed
         fixed_raw = generate_response(
             prompt=prompt,
-            system_prompt="Return ONLY valid JSON. No markdown. No explanations.",
-            provider="google",  # ✅ Gemini instead of huggingface
-            model_id="models/gemini-2.5-flash-lite",  # ✅ Fast + stable
-            temperature=0.1,
+            system_prompt=fallback_prompt,
+            provider="huggingface",
+            model_id="Qwen/Qwen2.5-32B-Instruct",
+            temperature=0.2,
             get_secret_func=get_secret_func
         )
-        fixed_cleaned = cleanup_markdown_json(fixed_raw)
-        return json.loads(fixed_cleaned)
+        
+        # Wytnij z powłoki markdown, jeśli model uparł się zawrzeć ```json ... ```
+        clean_json = fixed_raw.strip()
+        if clean_json.startswith("```json"):
+            clean_json = clean_json[7:]
+        if clean_json.startswith("```"):
+            clean_json = clean_json[3:]
+        if clean_json.endswith("```"):
+            clean_json = clean_json[:-3]
+            
+        fixed_dict = json.loads(clean_json.strip())
+        
+        # Ustawiamy meta info
+        fixed_dict.setdefault("meta", {})["error_flag"] = True
+        return fixed_dict
+        
     except Exception as e:
-        print(f"❌ Fallback Parser LLM failed: {e}")
-        # Step 5: Hard fallback — return minimal valid structure
+        print(f"Błąd krytyczny podczas działania Fallback Parser: {e}")
+        # Return hardcoded valid minimal dict so the script doesn't crash
         return {
-            "content": {
-                "text": raw_text[:500],
-                "claim_types": ["LOGICAL"]
-            },
-            "meta": {
-                "model": "fallback_hard",
-                "generation": 0,
-                "peer_review": {
-                    "iws_score": 5.0,
-                    "reviewer": "fallback_system"
-                }
-            },
-            "errors": [str(e)]
+            "generation_id": 999,
+            "timestamp": datetime.now().isoformat(),
+            "model_architecture": "Qwen-Fixer (Hard-Fallback)",
+            "role_assigned": "Stryż",
+            "content": {"transport_anchor": "CRITICAL_ERROR: Fallback failed", "ai_directive": {}, "claim_types": ["LOGICAL"]},
+            "peer_review": {"previous_entry_id": 0, "iws_score": 5.0, "critique": "Data lost due to hard crash", "correction_proposed": False},
+            "meta": {"error_flag": True, "hard_fallback": True}
         }
-
-
-def validate_schema(data: dict, schema: dict) -> tuple[bool, list]:
-    """Basic schema validation — check required keys exist"""
-    errors = []
-    required_top = ["content", "meta"]
-    for key in required_top:
-        if key not in data:
-            errors.append(f"Missing required key: {key}")
-    
-    if "content" in data:
-        if "text" not in data["content"]:
-            errors.append("Missing content.text")
-    
-    if "meta" in data:
-        if "model" not in data["meta"]:
-            errors.append("Missing meta.model")
-        if "generation" not in data["meta"]:
-            errors.append("Missing meta.generation")
-    
-    return (len(errors) == 0, errors)
