@@ -63,7 +63,7 @@ def call_huggingface_model(prompt: str, system_prompt: str, model_id: str, tempe
             {"role": "user", "content": prompt}
         ]
     }
-    url = f"https://api-inference.huggingface.co/models/{model_id}/v1/chat/completions"
+    url = "https://router.huggingface.co/v1/chat/completions"
     resp = requests.post(url, headers=headers, json=payload, timeout=30)
     resp.raise_for_status()
     return resp.json()["choices"][0]["message"]["content"]
