@@ -37,17 +37,28 @@ def call_anthropic_model(prompt: str, system_prompt: str, model_id: str, tempera
 def call_google_model(prompt: str, system_prompt: str, model_id: str, temperature: float, api_key: str) -> str:
     # Use Gemini REST API
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_id}:generateContent?key={api_key}"
-    payload = {
-        "system_instruction": {
-            "parts": [{"text": system_prompt}]
-        },
-        "contents": [{
-            "parts": [{"text": prompt}]
-        }],
-        "generationConfig": {
-            "temperature": temperature
+    if "gemma" in model_id.lower():
+        # Gemma does not support system_instruction in the REST API
+        payload = {
+            "contents": [{
+                "parts": [{"text": f"{system_prompt}\n\nUSER INPUT:\n{prompt}"}]
+            }],
+            "generationConfig": {
+                "temperature": temperature
+            }
         }
-    }
+    else:
+        payload = {
+            "system_instruction": {
+                "parts": [{"text": system_prompt}]
+            },
+            "contents": [{
+                "parts": [{"text": prompt}]
+            }],
+            "generationConfig": {
+                "temperature": temperature
+            }
+        }
     resp = requests.post(url, json=payload, timeout=120)
     resp.raise_for_status()
     return resp.json()["candidates"][0]["content"]["parts"][0]["text"]
