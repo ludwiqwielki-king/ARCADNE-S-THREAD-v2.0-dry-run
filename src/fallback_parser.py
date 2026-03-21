@@ -35,7 +35,7 @@ def qwen_fixer(raw_text: str, fallback_prompt: str, get_secret_func) -> dict:
             prompt=prompt,
             system_prompt=fallback_prompt,
             provider="google",
-            model_id="gemini-2.5-flash",
+            model_id="gemini-1.5-flash",
             temperature=0.2,
             get_secret_func=get_secret_func
         )
