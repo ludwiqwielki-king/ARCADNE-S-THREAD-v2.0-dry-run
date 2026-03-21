@@ -49,7 +49,18 @@ def qwen_fixer(raw_text: str, fallback_prompt: str, get_secret_func) -> dict:
         if clean_json.endswith("```"):
             clean_json = clean_json[:-3]
             
-        fixed_dict = json.loads(clean_json.strip())
+        try:
+            fixed_dict = json.loads(clean_json.strip())
+        except Exception:
+            try:
+                # Leniency for control characters
+                fixed_dict = json.loads(clean_json.strip(), strict=False)
+            except Exception:
+                # Last resort: fix invalid escape sequences (e.g. \ followed by something non-standard)
+                import re
+                # Negative lookahead for valid JSON escape characters
+                fixed_text = re.sub(r'\\(?![ubfnrt"\\/])', r'\\\\', clean_json.strip())
+                fixed_dict = json.loads(fixed_text, strict=False)
         
         # Ustawiamy meta info
         fixed_dict.setdefault("meta", {})["error_flag"] = True

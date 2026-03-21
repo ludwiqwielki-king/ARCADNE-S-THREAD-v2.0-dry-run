@@ -175,6 +175,9 @@ def main():
     thread = load_active_thread(DATA_DIR / "active_thread_v2.json")
     if thread:
         iterations_since_last_ext = thread[-1].get("meta", {}).get("iterations_since_last_ext", 0)
+        current_generation = thread[-1].get("generation_id", 0)
+    else:
+        current_generation = 0
 
     while True:
         current_generation += 1
@@ -236,6 +239,7 @@ def main():
             print(f"❌ JSON error ({e}) → Stryż (Fallback Parser) wkracza do akcji (pauza 15s API ratelimit)...")
             import time; time.sleep(15)
             parsed = qwen_fixer(raw, FALLBACK_PROMPT + "\nUpewnij się, że zachowujesz ścisłą strukturę JSON.", get_secret)
+            if isinstance(parsed, dict): parsed["generation_id"] = current_generation
 
         # Schema validation
         if not isinstance(parsed, dict) or not validate_entry(parsed):
