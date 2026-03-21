@@ -33,21 +33,20 @@ def call_huggingface_model(prompt: str, system_prompt: str, model_id: str, tempe
 # PROVIDER: GOOGLE (Gemini via google.genai SDK)
 # ============================================================================
 def call_google_model(prompt: str, system_prompt: str, model_id: str, temperature: float, api_key: str) -> str:
-    """Call Gemini via official google.genai SDK"""
+    """Call Gemini via google.genai SDK — compatibility mode (no GenerationConfig object)"""
+    from google import genai
+    
     client = genai.Client(api_key=api_key)
     
-    # ✅ Poprawna konwencja nazw modeli:
-    # - "gemini-1.5-flash" → works as-is
-    # - "models/gemini-1.5-flash" → also accepted by SDK
-    # Unikaj: "gemini-2.5-flash-lite" (nie istnieje)
+    # ✅ Normalize model prefix
+    clean_model = model_id if model_id.startswith("models/") else f"models/{model_id}"
     
+    # ✅ Pass config params directly — avoids GenerationConfig compatibility issues
     response = client.models.generate_content(
-        model=model_id if model_id.startswith("models/") else f"models/{model_id}",
+        model=clean_model,
         contents=f"SYSTEM: {system_prompt}\n\nUSER: {prompt}",
-        config=genai.types.GenerationConfig(
-            temperature=temperature,
-            max_output_tokens=4000
-        )
+        temperature=temperature,
+        max_output_tokens=4000
     )
     return response.text
 
