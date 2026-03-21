@@ -248,6 +248,7 @@ def main():
             parsed = qwen_fixer(raw, FALLBACK_PROMPT + "\nUpewnij się, że zachowujesz ścisłą strukturę JSON (generation_id, timestamp, model_architecture, role_assigned, content, peer_review).", get_secret)
 
         # Persist state
+        parsed["generation_id"] = current_generation
         parsed.setdefault("meta", {})["iterations_since_last_ext"] = iterations_since_last_ext
         thread.append(parsed)
         save_active_thread(thread, DATA_DIR / "active_thread_v2.json")

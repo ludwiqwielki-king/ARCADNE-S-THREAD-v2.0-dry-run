@@ -62,6 +62,12 @@ def qwen_fixer(raw_text: str, fallback_prompt: str, get_secret_func) -> dict:
                 fixed_text = re.sub(r'\\(?![ubfnrt"\\/])', r'\\\\', clean_json.strip())
                 fixed_dict = json.loads(fixed_text, strict=False)
         
+        # --- FIX: Ensure ai_directive is a dict (fixes dict_type error) ---
+        content = fixed_dict.get("content", {})
+        if "ai_directive" in content and not isinstance(content["ai_directive"], dict):
+            print(f"🔧 Naprawiam ai_directive: konwersja str -> dict")
+            content["ai_directive"] = {"raw_text": content["ai_directive"]}
+        
         # Ustawiamy meta info
         fixed_dict.setdefault("meta", {})["error_flag"] = True
         return fixed_dict
