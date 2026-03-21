@@ -16,7 +16,7 @@ def qwen_fixer(raw_text: str, fallback_prompt: str, get_secret_func) -> dict:
             prompt=prompt,
             system_prompt=fallback_prompt,
             provider="huggingface",
-            model_id="Qwen/Qwen2.5-32B-Instruct",
+            model_id="Qwen/Qwen2.5-72B-Instruct",
             temperature=0.2,
             get_secret_func=get_secret_func
         )

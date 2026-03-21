@@ -78,10 +78,10 @@ def generate_response(prompt: str, system_prompt: str, provider: str, model_id: 
             api_key = get_secret_func("ANTHROPIC_API_KEY")
             return call_anthropic_model(prompt, system_prompt, model_id, temperature, api_key)
         elif provider == "google":
-            api_key = get_secret_func("GOOGLE_API_KEY")
+            api_key = get_secret_func("GOOGLE_API_KEY") or get_secret_func("Gemini API Key")
             return call_google_model(prompt, system_prompt, model_id, temperature, api_key)
         elif provider == "huggingface":
-            api_key = get_secret_func("HF_TOKEN")
+            api_key = get_secret_func("HF_TOKEN") or get_secret_func("Qwen")
             return call_huggingface_model(prompt, system_prompt, model_id, temperature, api_key)
         else:
             raise ValueError(f"Unknown provider: {provider}")
