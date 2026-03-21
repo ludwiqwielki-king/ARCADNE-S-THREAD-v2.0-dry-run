@@ -1,10 +1,13 @@
 """
 HEINITZ-PRIME: LLM Client Wrapper (Dry-Run Minimal)
-Providers: huggingface (via OpenAI SDK + router), google (Gemini REST)
+Providers: 
+  - huggingface: via OpenAI SDK + router.huggingface.co/v1
+  - google: via google.genai SDK (not REST)
 Secrets (Kaggle UI): "Qwen", "Gemini API Key", "QDRANT_URL", "QDRANT_API_KEY"
 """
-from openai import OpenAI  # ✅ Nowa dependencja
-import requests
+from openai import OpenAI
+from google import genai  # ✅ Nowa dependencja
+# requests nie jest już potrzebny dla tych dwóch providerów
 
 # ============================================================================
 # PROVIDER: HUGGINGFACE (via OpenAI SDK + router.huggingface.co)
@@ -12,11 +15,11 @@ import requests
 def call_huggingface_model(prompt: str, system_prompt: str, model_id: str, temperature: float, api_key: str) -> str:
     """Call HF models via OpenAI-compatible router endpoint"""
     client = OpenAI(
-        base_url="https://router.huggingface.co/v1",  # ✅ Bez trailing spaces
+        base_url="https://router.huggingface.co/v1",  # ✅ Zero trailing spaces
         api_key=api_key
     )
     completion = client.chat.completions.create(
-        model=model_id,  # ✅ Model w payload, nie w URL
+        model=model_id,
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": prompt}
@@ -27,25 +30,26 @@ def call_huggingface_model(prompt: str, system_prompt: str, model_id: str, tempe
     return completion.choices[0].message.content
 
 # ============================================================================
-# PROVIDER: GOOGLE (Gemini via REST API) — bez zmian, działa
+# PROVIDER: GOOGLE (Gemini via google.genai SDK)
 # ============================================================================
 def call_google_model(prompt: str, system_prompt: str, model_id: str, temperature: float, api_key: str) -> str:
-    """Call Gemini via Google Generative Language REST API"""
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_id}:generateContent?key={api_key}"
-    payload = {
-        "system_instruction": {
-            "parts": [{"text": system_prompt}]
-        },
-        "contents": [{
-            "parts": [{"text": prompt}]
-        }],
-        "generationConfig": {
-            "temperature": temperature
-        }
-    }
-    resp = requests.post(url, json=payload, timeout=30)
-    resp.raise_for_status()
-    return resp.json()["candidates"][0]["content"]["parts"][0]["text"]
+    """Call Gemini via official google.genai SDK"""
+    client = genai.Client(api_key=api_key)
+    
+    # ✅ Poprawna konwencja nazw modeli:
+    # - "gemini-1.5-flash" → works as-is
+    # - "models/gemini-1.5-flash" → also accepted by SDK
+    # Unikaj: "gemini-2.5-flash-lite" (nie istnieje)
+    
+    response = client.models.generate_content(
+        model=model_id if model_id.startswith("models/") else f"models/{model_id}",
+        contents=f"SYSTEM: {system_prompt}\n\nUSER: {prompt}",
+        config=genai.types.GenerationConfig(
+            temperature=temperature,
+            max_output_tokens=4000
+        )
+    )
+    return response.text
 
 # ============================================================================
 # MAIN WRAPPER: generate_response (DRY-RUN: HF + GEMINI ONLY)
@@ -57,11 +61,11 @@ def generate_response(prompt: str, system_prompt: str, provider: str, model_id: 
     """
     try:
         if provider == "huggingface":
-            api_key = get_secret_func("Qwen")  # ✅ Exact Kaggle Secret name
+            api_key = get_secret_func("Qwen")
             return call_huggingface_model(prompt, system_prompt, model_id, temperature, api_key)
         
         elif provider == "google":
-            api_key = get_secret_func("Gemini API Key")  # ✅ Exact Kaggle Secret name
+            api_key = get_secret_func("Gemini API Key")
             return call_google_model(prompt, system_prompt, model_id, temperature, api_key)
         
         else:
