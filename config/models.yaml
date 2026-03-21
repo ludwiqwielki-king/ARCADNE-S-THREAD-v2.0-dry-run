@@ -2,7 +2,7 @@ qwen_validator:
   role: "Stryż (Validator/Naprawiacz JSON)"
   context_window: 32000
   provider: "huggingface"
-  model_id: "Qwen/Qwen2.5-32B-Instruct" # Zastąp "Qwen/Qwen3.5-35B-A3B" jeśli masz dedykowany endpoint
+  model_id: "Qwen/Qwen3.5-35B-A3B" # Zastąp "Qwen/Qwen3.5-35B-A3B" jeśli masz dedykowany endpoint
   temperature: 0.2
 
 gemini_mutator:
